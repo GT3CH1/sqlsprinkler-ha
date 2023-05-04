@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 
-import sqlsprinkler
+from sqlsprinkler import System, Zone
 import voluptuous as vol
 
 # Import the device class from the component that you want to support
@@ -29,37 +29,35 @@ def setup_platform(
         add_entities: AddEntitiesCallback,
         discovery_info: DiscoveryInfoType | None = None
         ) -> None:
-    """Set up the Awesome Light platform."""
-    # Assign configuration variables.
-    # The configuration check takes care they are present.
     host = config[CONF_HOST]
+    hub = System(host)
+    entities = []
+    for zone in hub.zones:
+        _LOGGER.info(zone)
+        entities.append(SQLSprinklerSwitch(zone))
+    _LOGGER.info(entities)
+    add_entities(entities, True)
 
-    # Setup connection with devices/cloud
-    hub = sqlsprinkler.System(host)
-
-    # Verify that passed in configuration works
-    #if not hub.is_valid_login():
-    #    _LOGGER.error("Could not connect to AwesomeLight hub")
-    #    return
-
-    # Add devices
-    add_entities(SQLSprinklerSwitch(zone) for zone in hub.zones)
-
-
-class SQLSprinklerSwitch(Zone):
+class SQLSprinklerSwitch(Zone, SwitchEntity):
     """Representation of an Awesome Light."""
-
+    _attr_has_entity_name = True
+    
     def __init__(self, switch) -> None:
         """Initialize an AwesomeLight."""
         self._switch = switch
         self._name = switch.name
         self._state = switch.state
+        self._gpio = switch.gpio
+        self._attr_unique_id = (f"sqlsprinklerha-zone-{switch.id}")
 
     @property
     def name(self) -> str:
         """Return the display name of this light."""
-        return self._name
-
+        return f"sqlsprinkler {self._name} "
+    @property
+    def icon(self) -> str | None:
+        return "mdi:sprinkler"
+    
     @property
     def is_on(self) -> bool | None:
         """Return true if light is on."""
