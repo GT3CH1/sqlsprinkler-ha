@@ -3,24 +3,23 @@ from __future__ import annotations
 
 import logging
 
-from sqlsprinkler import System, Zone
-import voluptuous as vol
-
 # Import the device class from the component that you want to support
 import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 from homeassistant.components.switch import (PLATFORM_SCHEMA,
-                                            SwitchEntity)
-from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
+                                             SwitchEntity)
+from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
+from sqlsprinkler import System, Zone
 
 _LOGGER = logging.getLogger(__name__)
 
 # Validation of the user's configuration
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST): cv.string,
-    })
+})
 
 
 def setup_platform(
@@ -28,23 +27,57 @@ def setup_platform(
         config: ConfigType,
         add_entities: AddEntitiesCallback,
         discovery_info: DiscoveryInfoType | None = None
-        ) -> None:
+) -> None:
     host = config[CONF_HOST]
     hub = System(host)
     entities = []
     for zone in hub.zones:
         _LOGGER.info(zone)
-        entities.append(SQLSprinklerSwitch(zone))
+        entities.append(SQLSprinklerZone(zone))
+        entities.append(SQLSprinklerEnabled(zone))
+        entities.append(SQLSprinklerAutoOff(zone))
+    entities.append(SQLSprinklerMaster(hub))
+
     _LOGGER.info(entities)
     add_entities(entities, True)
 
 
-class SQLSprinklerSwitch(Zone, SwitchEntity):
-    """Representation of an Awesome Light."""
+class SQLSprinklerMaster(System, SwitchEntity):
     _attr_has_entity_name = True
-    
+
     def __init__(self, switch) -> None:
-        """Initialize an AwesomeLight."""
+        self._switch = switch
+        self._name = "master"
+        self._state = switch.state
+        self._attr_unique_id = (f"sqlsprinklerha-master")
+
+    @property
+    def name(self) -> str:
+        return f"sqlsprinkler master"
+
+    @property
+    def icon(self) -> str | None:
+        return "mdi:switch"
+
+    @property
+    def is_on(self) -> bool | None:
+        return self._state
+
+    def turn_on(self, **kwargs: Any) -> None:
+        self._switch.turn_on()
+
+    def turn_off(self, **kwargs: Any) -> None:
+        self._switch.turn_off()
+
+    def update(self) -> None:
+        self._switch.update()
+        self._state = self._switch.state
+
+
+class SQLSprinklerZone(Zone, SwitchEntity):
+    _attr_has_entity_name = True
+
+    def __init__(self, switch) -> None:
         self._switch = switch
         self._name = f"zone-{switch.id}"
         self._state = switch.state
@@ -52,29 +85,87 @@ class SQLSprinklerSwitch(Zone, SwitchEntity):
 
     @property
     def name(self) -> str:
-        """Return the display name of this light."""
         return f"sqlsprinkler {self._name} "
+
     @property
     def icon(self) -> str | None:
         return "mdi:sprinkler"
-    
+
     @property
     def is_on(self) -> bool | None:
-        """Return true if light is on."""
         return self._state
 
     def turn_on(self, **kwargs: Any) -> None:
-        """Instruct the light to turn on. """
         self._switch.turn_on()
 
     def turn_off(self, **kwargs: Any) -> None:
-        """Instruct the light to turn off."""
         self._switch.turn_off()
 
     def update(self) -> None:
-        """Fetch new state data for this light.
-
-        This is the only method that should fetch new data for Home Assistant.
-        """
         self._switch.update()
         self._state = self._switch.state
+
+
+class SQLSprinklerEnabled(Zone, SwitchEntity):
+    _attr_has_entity_name = True
+
+    def __init__(self, switch) -> None:
+        self._switch = switch
+        self._name = f"zone-enabled-{switch.id}"
+        self._state = switch.state
+        self._attr_unique_id = (f"sqlsprinklerha-zone-enabled-{switch.id}")
+
+    @property
+    def name(self) -> str:
+        return f"sqlsprinkler zone-enabled {self._name} "
+
+    @property
+    def icon(self) -> str | None:
+        return "mdi:switch"
+
+    @property
+    def is_on(self) -> bool | None:
+        return self._state
+
+    def turn_on(self, **kwargs: Any) -> None:
+        self._switch.enable()
+
+    def turn_off(self, **kwargs: Any) -> None:
+        self._switch.disable()
+
+    def update(self) -> None:
+        self._switch.update()
+        self._state = self._switch.enabled
+
+
+class SQLSprinklerAutoOff(Zone, SwitchEntity):
+    _attr_has_entity_name = True
+
+    def __init__(self, switch) -> None:
+        self._switch = switch
+        self._name = f"zone-autooff-{switch.id}"
+        self._state = switch.state
+        self._attr_unique_id = (f"sqlsprinklerha-zone-autooff-{switch.id}")
+
+    @property
+    def name(self) -> str:
+        return f"sqlsprinkler zone-autooff {self._name} "
+
+    @property
+    def icon(self) -> str | None:
+        return "mdi:switch"
+
+    @property
+    def is_on(self) -> bool | None:
+        return self._state
+
+    def turn_on(self, **kwargs: Any) -> None:
+        self._switch.set_auto_off(True)
+
+    def turn_off(self, **kwargs: Any) -> None:
+        self._switch.set_auto_off(False)
+
+    def update(self) -> None:
+        self._switch.update()
+        self._state = self._switch.auto_off
+
