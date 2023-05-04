@@ -38,6 +38,7 @@ def setup_platform(
     _LOGGER.info(entities)
     add_entities(entities, True)
 
+
 class SQLSprinklerSwitch(Zone, SwitchEntity):
     """Representation of an Awesome Light."""
     _attr_has_entity_name = True
@@ -45,9 +46,8 @@ class SQLSprinklerSwitch(Zone, SwitchEntity):
     def __init__(self, switch) -> None:
         """Initialize an AwesomeLight."""
         self._switch = switch
-        self._name = switch.name
+        self._name = f"zone-{switch.id}"
         self._state = switch.state
-        self._gpio = switch.gpio
         self._attr_unique_id = (f"sqlsprinklerha-zone-{switch.id}")
 
     @property
