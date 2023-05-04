@@ -1,0 +1,10 @@
+{
+  "domain": "sqlsprinkler",
+  "name": "SQL Sprinkler",
+  "codeowners": [],
+  "dependencies": [],
+  "documentation": "peasenet.com",
+  "iot_class": "local_polling",
+  "requirements": ["sqlsprinkler==0.0.2"],
+  "version": "0.1.0"
+}
