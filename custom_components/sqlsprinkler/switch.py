@@ -8,7 +8,7 @@ import voluptuous as vol
 
 # Import the device class from the component that you want to support
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.switch import (ATTR_BRIGHTNESS, PLATFORM_SCHEMA,
+from homeassistant.components.switch import (PLATFORM_SCHEMA,
                                             SwitchEntity)
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
@@ -20,8 +20,6 @@ _LOGGER = logging.getLogger(__name__)
 # Validation of the user's configuration
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST): cv.string,
-    vol.Optional(CONF_USERNAME, default='admin'): cv.string,
-    vol.Optional(CONF_PASSWORD): cv.string,
     })
 
 
