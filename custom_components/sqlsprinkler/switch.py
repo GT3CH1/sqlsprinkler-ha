@@ -61,7 +61,7 @@ class SQLSprinklerMaster(System, SwitchEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return self._state
+        return self._switch.state
 
     def turn_on(self, **kwargs: Any) -> None:
         self._switch.turn_on()
@@ -93,7 +93,7 @@ class SQLSprinklerZone(Zone, SwitchEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return self._state
+        return self._switch.state
 
     def turn_on(self, **kwargs: Any) -> None:
         self._switch.turn_on()
@@ -125,7 +125,7 @@ class SQLSprinklerEnabled(Zone, SwitchEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return self._state
+        return self._switch.enabled
 
     def turn_on(self, **kwargs: Any) -> None:
         self._switch.enable()
@@ -157,7 +157,7 @@ class SQLSprinklerAutoOff(Zone, SwitchEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return self._state
+        return self._switch.auto_off
 
     def turn_on(self, **kwargs: Any) -> None:
         self._switch.set_auto_off(True)
