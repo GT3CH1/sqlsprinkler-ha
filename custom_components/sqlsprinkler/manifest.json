@@ -5,6 +5,6 @@
   "dependencies": [],
   "documentation": "peasenet.com",
   "iot_class": "local_polling",
-  "requirements": ["requests","sqlsprinkler-python-GT3CH1==0.0.4"],
+  "requirements": ["requests","sqlsprinkler-python-GT3CH1==0.0.6"],
   "version": "0.1.0"
 }
