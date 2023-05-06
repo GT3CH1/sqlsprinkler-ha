@@ -19,7 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 # Validation of the user's configuration
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST): cv.string,
-})
+    })
 
 
 def setup_platform(
@@ -27,7 +27,7 @@ def setup_platform(
         config: ConfigType,
         add_entities: AddEntitiesCallback,
         discovery_info: DiscoveryInfoType | None = None
-) -> None:
+        ) -> None:
     host = config[CONF_HOST]
     hub = System(host)
     entities = []
@@ -47,17 +47,17 @@ class SQLSprinklerMaster(System, SwitchEntity):
 
     def __init__(self, switch) -> None:
         self._switch = switch
-        self._name = "master"
+        self._name = "sqlsprinkler master"
         self._state = switch.state
-        self._attr_unique_id = (f"sqlsprinklerha-master")
+        self._attr_unique_id = (f"sqlsprinkler_master")
 
     @property
     def name(self) -> str:
-        return f"sqlsprinkler master"
+        return self._name
 
     @property
     def icon(self) -> str | None:
-        return "mdi:switch"
+        return "mdi:electric-switch"
 
     @property
     def is_on(self) -> bool | None:
@@ -79,17 +79,17 @@ class SQLSprinklerZone(Zone, SwitchEntity):
 
     def __init__(self, switch) -> None:
         self._switch = switch
-        self._name = f"zone-{switch.id}"
+        self._name = f"sqlsprinkler_zone_{switch.name.lower().replace(' ', '_')}"
         self._state = switch.state
-        self._attr_unique_id = (f"sqlsprinklerha-zone-{switch.id}")
+        self._attr_unique_id = (f"sqlsprinkler_zone_{switch.id}")
 
     @property
     def name(self) -> str:
-        return f"sqlsprinkler {self._name} "
+        return self._name
 
     @property
     def icon(self) -> str | None:
-        return "mdi:sprinkler"
+        return "mdi:sprinkler-variant"
 
     @property
     def is_on(self) -> bool | None:
@@ -101,7 +101,7 @@ class SQLSprinklerZone(Zone, SwitchEntity):
     def turn_off(self, **kwargs: Any) -> None:
         self._switch.turn_off()
 
-    def update(self) -> None:
+    def update(self) -> None
         self._switch.update()
         self._state = self._switch.state
 
@@ -111,16 +111,16 @@ class SQLSprinklerEnabled(Zone, SwitchEntity):
 
     def __init__(self, switch) -> None:
         self._switch = switch
-        self._name = f"zone-enabled-{switch.id}"
-        self._attr_unique_id = (f"sqlsprinklerha-zone-enabled-{switch.id}")
+        self._name = f"{switch.name} enabled"
+        self._attr_unique_id = (f"sqlsprinkler_zone_{switch.name.lower().replace(' ', '_')}_enabled_state")
 
     @property
     def name(self) -> str:
-        return f"sqlsprinkler zone-enabled {self._name} "
+        return self._name
 
     @property
     def icon(self) -> str | None:
-        return "mdi:switch"
+        return "mdi:electric-switch"
 
     @property
     def is_on(self) -> bool | None:
@@ -141,17 +141,17 @@ class SQLSprinklerAutoOff(Zone, SwitchEntity):
 
     def __init__(self, switch) -> None:
         self._switch = switch
-        self._name = f"zone-autooff-{switch.id}"
+        self._name = f"{switch.name} autooff"
         self._state = switch.state
-        self._attr_unique_id = (f"sqlsprinklerha-zone-autooff-{switch.id}")
+        self._attr_unique_id = (f"sqlsprinkler_zone_{switch.name.lower().replace(' ', '_')}_autooff_state")
 
     @property
     def name(self) -> str:
-        return f"sqlsprinkler zone-autooff {self._name} "
+        return self._name
 
     @property
     def icon(self) -> str | None:
-        return "mdi:switch"
+        return "mdi:electric-switch"
 
     @property
     def is_on(self) -> bool | None:

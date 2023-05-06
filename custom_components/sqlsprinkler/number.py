@@ -46,7 +46,7 @@ class SQLSprinklerTime(Zone, NumberEntity):
     _attr_native_step = 1
     _attr_native_unit_of_measurement: "minutes"
     def __init__(self, number) -> None:
-        t = f"sqlsprinklerha-{number.name}-time"
+        t = f"sqlsprinkler_{number.name.lower().replace(' ', '_')}_runtime"
         self._number = number
         self._name = t
         self._attr_unique_id = t
@@ -58,7 +58,7 @@ class SQLSprinklerTime(Zone, NumberEntity):
 
     @property
     def icon(self) -> str | None:
-        return "mdi:clock"
+        return "mdi:timer"
 
     @property
     def value(self) -> float:
