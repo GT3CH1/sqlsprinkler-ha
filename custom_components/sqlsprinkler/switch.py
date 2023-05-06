@@ -101,7 +101,7 @@ class SQLSprinklerZone(Zone, SwitchEntity):
     def turn_off(self, **kwargs: Any) -> None:
         self._switch.turn_off()
 
-    def update(self) -> None
+    def update(self) -> None:
         self._switch.update()
         self._state = self._switch.state
 
