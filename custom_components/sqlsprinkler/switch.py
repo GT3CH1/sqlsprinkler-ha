@@ -79,7 +79,7 @@ class SQLSprinklerZone(Zone, SwitchEntity):
 
     def __init__(self, switch) -> None:
         self._switch = switch
-        self._name = f"sqlsprinkler_zone_{switch.name.lower().replace(' ', '_')}"
+        self._name = f"sqlsprinkler_zone_{switch.id}"
         self._state = switch.state
         self._attr_unique_id = (f"sqlsprinkler_zone_{switch.id}")
 
@@ -112,7 +112,7 @@ class SQLSprinklerEnabled(Zone, SwitchEntity):
     def __init__(self, switch) -> None:
         self._switch = switch
         self._name = f"{switch.name} enabled"
-        self._attr_unique_id = (f"sqlsprinkler_zone_{switch.name.lower().replace(' ', '_')}_enabled_state")
+        self._attr_unique_id = (f"sqlsprinkler_zone_{switch.id}_enabled_state")
 
     @property
     def name(self) -> str:
@@ -143,7 +143,7 @@ class SQLSprinklerAutoOff(Zone, SwitchEntity):
         self._switch = switch
         self._name = f"{switch.name} autooff"
         self._state = switch.state
-        self._attr_unique_id = (f"sqlsprinkler_zone_{switch.name.lower().replace(' ', '_')}_autooff_state")
+        self._attr_unique_id = (f"sqlsprinkler_zone_{switch.id}_autooff_state")
 
     @property
     def name(self) -> str:
