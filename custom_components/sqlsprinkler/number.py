@@ -41,30 +41,32 @@ def setup_platform(
 
 class SQLSprinklerTime(Zone, NumberEntity):
     _attr_has_entity_name = True
-
+    _attr_max_value = 120
+    _attr_min_value = 0
+    _attr_native_step = 1
+    _attr_native_unit_of_measurement: "minutes"
     def __init__(self, number) -> None:
         t = f"sqlsprinklerha-{number.name}-time"
         self._number = number
         self._name = t
-        self.native_value = number.state
         self._attr_unique_id = t
+
 
     @property
     def name(self) -> str:
-        return f"sqlsprinkler master"
+        return self._name
 
     @property
     def icon(self) -> str | None:
-        return "mdi:switch"
+        return "mdi:clock"
 
     @property
     def value(self) -> float:
         return self._number.time
 
-    def set_native_value(self, value: float) -> None:
-        self._number.time = value
-        self._number.update()
+    def set_native_value(self, value: int) -> None:
+        self._number.time = int(value)
+        self._number.update_other(self._number)
 
     def update(self) -> None:
         self._number.update()
-        self.native_value = self._number.state
