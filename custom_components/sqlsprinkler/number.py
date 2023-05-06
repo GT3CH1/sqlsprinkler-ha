@@ -6,7 +6,7 @@ import logging
 # Import the device class from the component that you want to support
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.components.switch import (PLATFORM_SCHEMA,
+from homeassistant.components.number import (PLATFORM_SCHEMA,
                                              NumberEntity)
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
