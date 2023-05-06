@@ -112,7 +112,6 @@ class SQLSprinklerEnabled(Zone, SwitchEntity):
     def __init__(self, switch) -> None:
         self._switch = switch
         self._name = f"zone-enabled-{switch.id}"
-        self._state = switch.state
         self._attr_unique_id = (f"sqlsprinklerha-zone-enabled-{switch.id}")
 
     @property
@@ -135,7 +134,6 @@ class SQLSprinklerEnabled(Zone, SwitchEntity):
 
     def update(self) -> None:
         self._switch.update()
-        self._state = self._switch.enabled
 
 
 class SQLSprinklerAutoOff(Zone, SwitchEntity):
@@ -168,4 +166,3 @@ class SQLSprinklerAutoOff(Zone, SwitchEntity):
     def update(self) -> None:
         self._switch.update()
         self._state = self._switch.auto_off
-
