@@ -16,21 +16,16 @@ from sqlsprinkler import System, Zone
 
 _LOGGER = logging.getLogger(__name__)
 
+DOMAIN = "sqlsprinkler"
+
 # Validation of the user's configuration
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_HOST): cv.string,
-    })
-
-
 async def async_setup_platform(
         hass: HomeAssistant,
         config: ConfigType,
         async_add_entities,
         discovery_info: DiscoveryInfoType | None = None
         ) -> None:
-    host = config[CONF_HOST]
-    hub = System(host)
-    await hub.async_update()
+    hub = hass.data[DOMAIN][config.entry_id]
     entities = []
     for zone in hub.zones:
         _LOGGER.info(zone)
