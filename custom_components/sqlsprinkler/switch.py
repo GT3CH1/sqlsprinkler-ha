@@ -3,82 +3,176 @@ from __future__ import annotations
 
 import logging
 
-import sqlsprinkler
-import voluptuous as vol
-
 # Import the device class from the component that you want to support
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.switch import (ATTR_BRIGHTNESS, PLATFORM_SCHEMA,
-                                            SwitchEntity)
-from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
+import voluptuous as vol
+from homeassistant.components.switch import (PLATFORM_SCHEMA,
+                                             SwitchEntity)
+from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
+from sqlsprinkler import System, Zone
 
 _LOGGER = logging.getLogger(__name__)
 
 # Validation of the user's configuration
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST): cv.string,
-    vol.Optional(CONF_USERNAME, default='admin'): cv.string,
-    vol.Optional(CONF_PASSWORD): cv.string,
     })
 
 
-def setup_platform(
+async def async_setup_platform(
         hass: HomeAssistant,
         config: ConfigType,
-        add_entities: AddEntitiesCallback,
+        async_add_entities,
         discovery_info: DiscoveryInfoType | None = None
         ) -> None:
-    """Set up the Awesome Light platform."""
-    # Assign configuration variables.
-    # The configuration check takes care they are present.
     host = config[CONF_HOST]
+    hub = System(host)
+    await hub.async_update()
+    entities = []
+    for zone in hub.zones:
+        _LOGGER.info(zone)
+        entities.append(SQLSprinklerZone(zone,hub))
+        entities.append(SQLSprinklerEnabled(zone))
+        entities.append(SQLSprinklerAutoOff(zone,hub))
+    entities.append(SQLSprinklerMaster(hub))
 
-    # Setup connection with devices/cloud
-    hub = sqlsprinkler.System(host)
-
-    # Verify that passed in configuration works
-    #if not hub.is_valid_login():
-    #    _LOGGER.error("Could not connect to AwesomeLight hub")
-    #    return
-
-    # Add devices
-    add_entities(SQLSprinklerSwitch(zone) for zone in hub.zones)
+    _LOGGER.info(entities)
+    async_add_entities(entities, True)
 
 
-class SQLSprinklerSwitch(Zone):
-    """Representation of an Awesome Light."""
+class SQLSprinklerMaster(System, SwitchEntity):
+    _attr_has_entity_name = True
 
     def __init__(self, switch) -> None:
-        """Initialize an AwesomeLight."""
         self._switch = switch
-        self._name = switch.name
-        self._state = switch.state
+        self._name = "sqlsprinkler master"
+        self._state = switch.system_state
+        self._attr_unique_id = (f"sqlsprinkler_master")
 
     @property
     def name(self) -> str:
-        """Return the display name of this light."""
         return self._name
 
     @property
+    def icon(self) -> str | None:
+        return "mdi:electric-switch"
+
+    @property
     def is_on(self) -> bool | None:
-        """Return true if light is on."""
-        return self._state
+        return self._switch.system_state
 
-    def turn_on(self, **kwargs: Any) -> None:
-        """Instruct the light to turn on. """
-        self._switch.turn_on()
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._switch.async_turn_on()
+        self._state = self._switch.system_state
 
-    def turn_off(self, **kwargs: Any) -> None:
-        """Instruct the light to turn off."""
-        self._switch.turn_off()
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._switch.async_turn_off()
+        self._state = self._switch.system_state
 
-    def update(self) -> None:
-        """Fetch new state data for this light.
+    async def async_update(self) -> None:
+        await self._switch.async_update()
+        self._state = self._switch.system_state
 
-        This is the only method that should fetch new data for Home Assistant.
-        """
-        self._switch.update()
+
+class SQLSprinklerZone(Zone, System, SwitchEntity):
+
+    _attr_has_entity_name = True
+    def __init__(self, switch,system) -> None:
+        self._switch = switch
+        self._name = f"sqlsprinkler_zone_{switch.id}"
+        self._state = switch.state
+        self._attr_unique_id = (f"sqlsprinkler_zone_{switch.id}")
+        self._system = system
+
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def icon(self) -> str | None:
+        return "mdi:sprinkler-variant"
+    @property
+    def is_on(self) -> bool | None:
+        return self._switch.state
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._switch.async_turn_on()
         self._state = self._switch.state
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._switch.async_turn_off()
+        self._state = self._switch.state
+
+    async def async_update(self) -> None:
+        self._state = self._system.get_zone_by_id(self._switch.id).state
+
+
+class SQLSprinklerEnabled(Zone, SwitchEntity):
+    _attr_has_entity_name = True
+
+    def __init__(self, switch) -> None:
+        self._switch = switch
+        self._name = f"sqlsprinkler_zone_{switch.id}_enabled_state"
+        self._attr_unique_id = (f"sqlsprinkler_zone_{switch.id}_enabled_state")
+
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def icon(self) -> str | None:
+        return "mdi:electric-switch"
+
+    @property
+    def is_on(self) -> bool | None:
+        return self._switch.enabled
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._switch.async_enable()
+        self._state = self._switch.state
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._switch.async_disable()
+        self._state = self._switch.state
+
+    async def async_update(self) -> None:
+        await self._switch.async_update()
+
+
+class SQLSprinklerAutoOff(Zone, System, SwitchEntity):
+    _attr_has_entity_name = True
+
+    def __init__(self, switch, system) -> None:
+        self._switch = switch
+        self._name = f"sqlsprinkler_zone_{switch.id}_autooff_state"
+        self._state = switch.state
+        self._attr_unique_id = (f"sqlsprinkler_zone_{switch.id}_autooff_state")
+        self._system = system
+
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def icon(self) -> str | None:
+        return "mdi:electric-switch"
+
+    @property
+    def is_on(self) -> bool | None:
+        return self._switch.auto_off
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._switch.async_set_auto_off(True)
+
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._switch.async_set_auto_off(False)
+
+    async def async_update(self) -> None:
+        self._state = self._system.get_zone_by_id(self._switch.id).auto_off
