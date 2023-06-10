@@ -1,10 +1,9 @@
 """ SQLSprinkler """
 from sqlsprinkler import System
 
+from .const import DOMAIN
 from homeassistant.core import HomeAssistant, callback
-
-DOMAIN = "sqlsprinkler"
-
+from homeassistant.config_entries import ConfigEntry
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_devices):
     system = System(config_entry.data)
     await system.async_update()
