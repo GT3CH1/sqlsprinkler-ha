@@ -42,12 +42,13 @@ class SQLSprinklerTime(CoordinatorEntity, NumberEntity):
     _attr_native_step = 5
     _attr_native_unit_of_measurement: "minutes"
     _system = None
-    def __init__(self, coordinator,zone) -> None:
+    def __init__(self, coordinator, zone, idx) -> None:
         super().__init__(coordinator)
         t = f"sqlsprinkler_zone_{zone.id}_time"
         self._zone = zone
         self._name = t
         self._attr_unique_id = t
+        self.idx
 
     @property
     def name(self) -> str:
@@ -58,8 +59,8 @@ class SQLSprinklerTime(CoordinatorEntity, NumberEntity):
         return "mdi:timer"
 
     async def async_set_native_value(self, value: int) -> None:
-        self._zone.time = int(value)
         await self._zone.async_set_time(int(value))
+        await self.coordinator.async_request_refresh()
 
     @callback
     def _handle_coordinator_update(self) -> None:

@@ -56,11 +56,11 @@ class SQLSprinklerMaster(CoordinatorEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._switch.async_turn_on()
-        self._state = self._switch.system_state
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._switch.async_turn_off()
-        self._state = self._switch.system_state
+        await self.coordinator.async_request_refresh()
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -89,11 +89,11 @@ class SQLSprinklerZone(CoordinatorEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._switch.async_turn_on()
-        self._state = self._switch.state
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._switch.async_turn_off()
-        self._state = self._switch.state
+        await self.coordinator.async_request_refresh()
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -136,13 +136,12 @@ class SQLSprinklerAutoOff(CoordinatorEntity, SwitchEntity):
     _attr_has_entity_name = True
 
     def __init__(self, coordinator,zone,idx) -> None:
-        super().__init(coordinator)
+        super().__init__(coordinator)
         self.idx = idx
         self._switch = zone
         self._name = f"sqlsprinkler_zone_{zone.id}_autooff_state"
         self._state = zone.state
         self._attr_unique_id = (f"sqlsprinkler_zone_{zone.id}_autooff_state")
-        self._system = system
 
     @property
     def name(self) -> str:
@@ -154,9 +153,11 @@ class SQLSprinklerAutoOff(CoordinatorEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._switch.async_set_auto_off(True)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._switch.async_set_auto_off(False)
+        await self.coordinator.async_request_refresh()
 
     @callback
     def _handle_coordinator_update(self) -> None:
