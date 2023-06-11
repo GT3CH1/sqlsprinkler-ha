@@ -3,46 +3,43 @@ from __future__ import annotations
 
 import logging
 
-# Import the device class from the component that you want to support
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.components.switch import (PLATFORM_SCHEMA,
-                                             SwitchEntity)
+
+from homeassistant.components.switch import (PLATFORM_SCHEMA, SwitchEntity)
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from sqlsprinkler import System, Zone
 from .system import SqlSprinklerZoneEntity
-from .const import DOMAIN
+from .const import DOMAIN, DEVICE_MANUFACTURER, DEVICE_MODEL, SW_VERSION
+
 _LOGGER = logging.getLogger(__name__)
 
-# Validation of the user's configuration
-async def async_setup_entry(
-        hass: HomeAssistant,
-        config: ConfigType,
-        async_add_entities,
-        ) -> None:
+async def async_setup_entry(hass: HomeAssistant, config: ConfigType, async_add_entities) -> None:
     coordinator = hass.data[DOMAIN][config.entry_id]
     system = coordinator.sqlsprinklersystem
     entities = []
     for idx, zone in enumerate(system.zones):
         _LOGGER.info(f"Adding zone {zone}")
-        entities.append(SQLSprinklerZone(coordinator,zone,idx))
         entities.append(SQLSprinklerEnabled(coordinator,zone, idx))
         entities.append(SQLSprinklerAutoOff(coordinator,zone, idx))
+        entities.append(SQLSprinklerZone(coordinator, zone, idx))
     entities.append(SQLSprinklerMaster(coordinator,system))
     async_add_entities(entities, True)
 
 
 class SQLSprinklerMaster(CoordinatorEntity, SwitchEntity):
+    """The master switch for the system schedule."""
     _attr_has_entity_name = True
 
     def __init__(self, coordinator, switch) -> None:
         super().__init__(coordinator)
         self._switch = switch
-        self._name = "sqlsprinkler master"
+        self._name = "SQLSprinkler System State"
         self._state = switch.system_state
         self._attr_unique_id = (f"sqlsprinkler_master")
 
@@ -53,6 +50,16 @@ class SQLSprinklerMaster(CoordinatorEntity, SwitchEntity):
     @property
     def icon(self) -> str | None:
         return "mdi:electric-switch"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, self.unique_id)},
+            name=self._name,
+            manufacturer=DEVICE_MANUFACTURER,
+            model=DEVICE_MODEL,
+            sw_version=SW_VERSION,
+        )
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._switch.async_turn_on()
@@ -69,7 +76,7 @@ class SQLSprinklerMaster(CoordinatorEntity, SwitchEntity):
 
 
 class SQLSprinklerZone(CoordinatorEntity, SwitchEntity):
-
+    """A switch representing a single zone, allowing it to turn on or off."""
     _attr_has_entity_name = True
     def __init__(self, coordinator,zone,idx) -> None:
         super().__init__(coordinator)
@@ -87,6 +94,18 @@ class SQLSprinklerZone(CoordinatorEntity, SwitchEntity):
     def icon(self) -> str | None:
         return "mdi:sprinkler-variant"
 
+    @property
+    def device_info(self) -> DeviceInfo:
+        zone_name = f"sqlsprinkler_zone_{self._switch.id}"
+        return DeviceInfo(
+            identifiers={(DOMAIN, zone_name)},
+            name=self._switch.name,
+            manufacturer=DEVICE_MANUFACTURER,
+            model=DEVICE_MODEL,
+            sw_version=SW_VERSION,
+            via_device=(DOMAIN, "sqlsprinkler_master"),
+        )
+
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._switch.async_turn_on()
         await self.coordinator.async_request_refresh()
@@ -102,6 +121,7 @@ class SQLSprinklerZone(CoordinatorEntity, SwitchEntity):
 
 
 class SQLSprinklerEnabled(CoordinatorEntity, SwitchEntity):
+    """A switch state representing whether this system is enabled to run during the system schedule."""
     _attr_has_entity_name = True
     def __init__(self,coordinator,zone,idx) -> None:
         super().__init__(coordinator)
@@ -109,7 +129,6 @@ class SQLSprinklerEnabled(CoordinatorEntity, SwitchEntity):
         self.idx = idx
         self._name = f"sqlsprinkler_zone_{self._switch.id}_enabled_state"
         self._attr_unique_id = (f"sqlsprinkler_zone_{self._switch.id}_enabled_state")
-        _LOGGER.info(f"Enabled Switch for {self._switch.id}, {self._switch}")
 
     @property
     def name(self) -> str:
@@ -119,6 +138,17 @@ class SQLSprinklerEnabled(CoordinatorEntity, SwitchEntity):
     def icon(self) -> str | None:
         return "mdi:electric-switch"
 
+    @property
+    def device_info(self) -> DeviceInfo:
+        zone_name = f"sqlsprinkler_zone_{self._switch.id}"
+        return DeviceInfo(
+            identifiers={(DOMAIN, zone_name)},
+            name=self._switch.name,
+            manufacturer=DEVICE_MANUFACTURER,
+            model=DEVICE_MODEL,
+            sw_version=SW_VERSION,
+            via_device=(DOMAIN, zone_name),
+        )
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._switch.async_enable()
         await self.coordinator.async_request_refresh()
@@ -133,6 +163,7 @@ class SQLSprinklerEnabled(CoordinatorEntity, SwitchEntity):
         self.async_write_ha_state()
 
 class SQLSprinklerAutoOff(CoordinatorEntity, SwitchEntity):
+    """A switch representing whether or not a zone automatically shuts off if turned on manually."""
     _attr_has_entity_name = True
 
     def __init__(self, coordinator,zone,idx) -> None:
@@ -150,6 +181,18 @@ class SQLSprinklerAutoOff(CoordinatorEntity, SwitchEntity):
     @property
     def icon(self) -> str | None:
         return "mdi:electric-switch"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        zone_name = f"sqlsprinkler_zone_{self._switch.id}"
+        return DeviceInfo(
+            identifiers={(DOMAIN, zone_name)},
+            name=self._switch.name,
+            manufacturer=DEVICE_MANUFACTURER,
+            model=DEVICE_MODEL,
+            sw_version=SW_VERSION,
+            via_device=(DOMAIN, zone_name),
+        )
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._switch.async_set_auto_off(True)

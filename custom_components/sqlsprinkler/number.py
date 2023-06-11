@@ -3,30 +3,22 @@ from __future__ import annotations
 
 import logging
 
-# Import the device class from the component that you want to support
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.components.number import (PLATFORM_SCHEMA,
-                                             NumberEntity)
+
+from homeassistant.components.number import (PLATFORM_SCHEMA, NumberEntity)
 from homeassistant.const import CONF_HOST
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from sqlsprinkler import System, Zone
+from .const import DOMAIN, DEVICE_MANUFACTURER, DEVICE_MODEL, SW_VERSION
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "sqlsprinkler"
-
-# Validation of the user's configuration
-
-
-async def async_setup_entry(
-        hass: HomeAssistant,
-        config: ConfigType,
-        async_add_entities,
-        ) -> None:
+async def async_setup_entry(hass: HomeAssistant, config: ConfigType, async_add_entities,) -> None:
     coordinator = hass.data[DOMAIN][config.entry_id]
     entities = []
     hub = coordinator.sqlsprinklersystem
@@ -36,6 +28,7 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 class SQLSprinklerTime(CoordinatorEntity, NumberEntity):
+    """A number representing how long a zone should run for."""
     _attr_has_entity_name = True
     _attr_max_value = 60
     _attr_min_value = 0
@@ -48,7 +41,7 @@ class SQLSprinklerTime(CoordinatorEntity, NumberEntity):
         self._zone = zone
         self._name = t
         self._attr_unique_id = t
-        self.idx
+        self.idx = idx
 
     @property
     def name(self) -> str:
@@ -58,11 +51,24 @@ class SQLSprinklerTime(CoordinatorEntity, NumberEntity):
     def icon(self) -> str | None:
         return "mdi:timer"
 
-    async def async_set_native_value(self, value: int) -> None:
-        await self._zone.async_set_time(int(value))
-        await self.coordinator.async_request_refresh()
+    @property
+    def device_info(self) -> DeviceInfo:
+        zone_name = f"sqlsprinkler_zone_{self._zone.id}"
+        return DeviceInfo(
+            identifiers={(DOMAIN, zone_name)},
+            name=self._zone.name,
+            manufacturer=DEVICE_MANUFACTURER,
+            model=DEVICE_MODEL,
+            sw_version=SW_VERSION,
+            via_device=(DOMAIN, zone_name),
+        )
 
     @callback
     def _handle_coordinator_update(self) -> None:
         self._attr_value = self.coordinator.data["zones"][self.idx].time
         self.async_write_ha_state()
+
+    async def async_set_native_value(self, value: int) -> None:
+        await self._zone.async_set_time(int(value))
+        await self.coordinator.async_request_refresh()
+

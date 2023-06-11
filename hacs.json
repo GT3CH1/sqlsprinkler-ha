@@ -1,8 +1,9 @@
 {
     "name": "SQLSprinkler",
-    "render_readme": false,
+    "render_readme": true,
     "domains": [
-        "switch"
+        "switch",
+        "number"
     ],
     "iot_class": "Local Polling",
     "homeassistant": "2022.4.0"
