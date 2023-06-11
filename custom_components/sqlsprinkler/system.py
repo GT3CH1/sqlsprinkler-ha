@@ -7,12 +7,12 @@ from datetime import timedelta
 _LOGGER= logging.getLogger(__name__)
 
 class MyCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, system: System) -> None:
+    def __init__(self, hass: HomeAssistant, system: System, interval: int) -> None:
         super().__init__(
                 hass,
                 _LOGGER,
                 name=DOMAIN,
-                update_interval=timedelta(seconds=5),
+                update_interval=timedelta(seconds=interval),
         )
         self.sqlsprinklersystem = system
 

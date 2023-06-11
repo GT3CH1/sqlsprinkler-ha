@@ -19,10 +19,11 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     host = config_entry.data["host"]
+    interval = config_entry.data["interval"]
     system = System(host)
     await system.async_update()
     _LOGGER.info(f"System host: {host}")
-    sys = MyCoordinator(hass,system)
+    sys = MyCoordinator(hass,system,interval)
     hass.data.setdefault(DOMAIN,{})[config_entry.entry_id] = sys
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
     return True
