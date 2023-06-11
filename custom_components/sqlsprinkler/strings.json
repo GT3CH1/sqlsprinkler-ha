@@ -4,15 +4,23 @@
         "step": {
             "host": {
                 "title": "SQLSprinkler Host",
+                "description": "The host for your SQLSprinkler, containing http:// and the port number.",
                 "data": {
                     "host": "Host"
+                }
+            },
+            "update_interval" {
+                "title": "Update Interval",
+                "description": "How frequently to poll data",
+                "data": {
+                    "interval": "Update Interval"
                 }
             }
         },
         "error": {
-            "bad_host": "Invalid hostname",
-            "bad_interval": "Invalid interval",
-            "cannot_connect": "Cannot fetch zones"
+            "bad_interval": "Invalid Interval",
+            "bad_host": "Invalid Host",
+            "cannot_connect": "Cannot Connect to host!"
         }
     }
 }

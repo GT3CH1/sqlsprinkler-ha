@@ -6,6 +6,7 @@ from homeassistant import exceptions
 from sqlsprinkler import System
 from urllib.parse import urlparse
 from .const import DOMAIN
+from typing import Any
 import voluptuous as vol
 
 
@@ -25,8 +26,8 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict[str, Any]:
     await sys.async_update()
     if len(sys.zones) == 0:
         raise CannotConnect
-    if _interval is not int:
-        raise ValueError
+    if _interval is not int or _interval <= 0:
+        raise InvalidInterval
     _res['host'] = _host
     _res['interval'] = _interval
     return _res
@@ -57,3 +58,11 @@ class SqlSprinklerConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors=errors
             )
 
+class CannotConnect(exceptions.HomeAssistantError):
+    """Error saying we cannot connect to a host"""
+
+class InvalidHost(exceptions.HomeAssistantError):
+    """Error saying our host was invalid."""
+
+class InvalidInterval(exceptions.HomeAssistantError):
+    """Error saying our interval was invalid."""
